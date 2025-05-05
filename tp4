@@ -1,0 +1,71 @@
+close all;
+clear all;
+clc;
+
+bits = [1 0 1 1];
+N = length(bits);
+dt = 0.001;
+ech = (1/dt)/10;
+t_total = 0:dt:N;
+n = length(t_total) - 1;
+ech_par_bit = n / N;
+
+for k = 0:N-1
+    if bits(k+1) == 1
+        sig(k*ech_par_bit+1 : (k+1)*ech_par_bit) = 1;
+    else
+        sig(k*ech_par_bit+1 : (k+1)*ech_par_bit) = -1;
+    end
+end
+
+t = 0:dt:N;
+fp = 10;
+porteuse = sin(2*pi*fp*t_total);
+porteuse = porteuse(1:end-1);
+module = porteuse .* sig;
+t = t(1:end-1);
+
+figure(1)
+subplot(3,1,1); plot(t,porteuse); title('Porteuse')
+subplot(3,1,2); plot(t,sig); title('Signal NRZ'); axis([0 t(end) -2 2]);
+subplot(3,1,3); plot(t,module); title('Signal modulé');
+
+bruit = 0.1 * randn(1, length(module));
+signal_bruite = module + bruit;
+subplot(3,1,3); plot(t,signal_bruite); title('Signal bruité');
+
+for i = 1:N
+    segments(i,:) = signal_bruite(1+(ech_par_bit*(i-1)) : ech_par_bit*i);
+end
+
+t_ref = 0:dt:1;
+t_ref = t_ref(1:ech);
+ref = sin(2*pi*fp*t_ref);
+ref = ref(1:ech);
+T_per = 1/fp;
+
+for j = 1:N
+    test = segments(j,1:ech);
+    idx1 = find(test == max(test));
+    idx2 = find(ref == max(ref));
+    decalage = t_ref(idx1) - t_ref(idx2);
+    phase_rad(j) = (decalage * ((2*pi)/T_per));
+end
+
+Amp = max(test);
+I = sqrt((Amp^2)./(1+tan(phase_rad).^2));
+Q = I .* tan(phase_rad);
+
+for j = 1:N
+   if (phase_rad(j) > pi/2 && phase_rad(j) < 3*pi/2)
+        I(j) = -I(j);
+   end
+end
+
+figure(2)
+plot(I,Q,'*r','LineWidth',6)
+xlim([-2 2]);
+ylim([-2 2]);
+line([-2 2], [0 0])
+line([0 0], [-2 2])
+grid on
