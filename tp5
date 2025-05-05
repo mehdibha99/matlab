@@ -1,0 +1,60 @@
+close all
+clear all
+clc
+t = 0:0.01:10;
+x = square(t);
+
+figure(1)
+plot(t, x);
+title('signal rectangulaire x(t)')
+
+nbit_0 = 0;
+nbit_1 = 0;
+for i = 1:length(x)
+    if (x(i) == 1)
+        x_emis(i) = 1;
+        nbit_1 = nbit_1 + 1;
+    else
+        x_emis(i) = 0;
+        nbit_0 = nbit_0 + 1;
+    end
+end 
+
+pas_ech = 10;
+x_emis = x_emis(1:pas_ech:end);
+figure(2)
+stem(x_emis)
+
+x_taille = length(x);
+
+bruit = randn(size(x)); 
+pb = 0.9;  
+bruit = pb * bruit;
+x_bruite = x + bruit;
+s_desc = 0;
+x_seuil = s_desc * ones(1, x_taille);
+figure(3)
+plot(t, x_bruite, t, x_seuil);
+
+x_bruite = x_bruite(1:pas_ech:end);
+t_x_bruit = length(x_bruite);
+for i = 1:t_x_bruit
+    if (x_bruite(i) > x_seuil(i))
+        x_recu(i) = 1;
+    else 
+        x_recu(i) = 0;
+    end
+end
+figure(4)
+stem(x_recu)
+
+bit_errone = 0;
+for i = 1:t_x_bruit
+    if (x_recu(i) ~= x_emis(i))
+        bit_errone = bit_errone + 1;
+    end
+end
+
+sprintf("les bits erronées sont %d bit ", bit_errone)
+TauxP = bit_errone / length(x_emis);
+sprintf("le taux de probabilité est %d : ", TauxP)
